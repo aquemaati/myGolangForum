@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	server, err := server.InitializeServer(".env")
+	server, err := server.InitializeServer(".env", "database/database.db")
 	if err != nil {
 		log.Fatalf("error initializing server: %v\n", err)
 		return
