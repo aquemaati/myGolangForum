@@ -37,9 +37,11 @@ func InitializeServer(envFilePath, dbPath string) (*http.Server, error) {
 	}
 	sessionCache := initSessionCache()
 
+	protectedPaths := []string{"/admin", "/user"}
+
 	// Créez un multiplexer
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", controller.Home)
+	mux.Handle("/", controller.Home(db))
 
 	// Chaîne de middlewares
 	handler := middleware.Recovery(
@@ -47,7 +49,7 @@ func InitializeServer(envFilePath, dbPath string) (*http.Server, error) {
 			middleware.Logging(
 				middleware.ParseForm( // Ajoutez le parsing du formulaire avant les autres middlewares
 					middleware.CacheHandler(sessionCache)(
-						middleware.Authentication(db, sessionCache)(mux),
+						middleware.Authentication(db, sessionCache, protectedPaths)(mux),
 					),
 				),
 			),

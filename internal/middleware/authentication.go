@@ -5,45 +5,65 @@ import (
 	"context"
 	"database/sql"
 	"net/http"
+	"strings"
 )
 
-func Authentication(db *sql.DB, cache *SessionCache) func(http.Handler) http.Handler {
+func Authentication(db *sql.DB, cache *SessionCache, protectedPaths []string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Récupérer le token de session du contexte
-			token, ok := r.Context().Value(SessionIdContextKey).(string)
-			if !ok {
-				http.Error(w, "Unauthorized", http.StatusUnauthorized)
-				return
-			}
+			// Récupérer le chemin d'URL de la requête
+			requestPath := r.URL.Path
 
-			// Vérifier si l'ID utilisateur est déjà dans le contexte
-			if _, ok := r.Context().Value(UserIdContextKey).(string); ok {
-				// Si trouvé dans le contexte, continuer
-				next.ServeHTTP(w, r)
-				return
-			}
-
-			// Interroger la base de données pour obtenir l'ID utilisateur
-			var userID string
-			err := db.QueryRow("SELECT userId FROM Sessions WHERE sessionId = ?", token).Scan(&userID)
-			if err != nil {
-				if err == sql.ErrNoRows {
-					http.Error(w, "Unauthorized", http.StatusUnauthorized)
-				} else {
-					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			// Vérifier si le chemin d'URL nécessite une authentification
+			requiresAuthentication := false
+			for _, path := range protectedPaths {
+				if strings.HasPrefix(requestPath, path) {
+					requiresAuthentication = true
+					break
 				}
+			}
+
+			// Si le chemin d'URL nécessite une authentification
+			if requiresAuthentication {
+				// Récupérer le token de session du contexte
+				token, ok := r.Context().Value(SessionIdContextKey).(string)
+				if !ok {
+					http.Error(w, "Unauthorized", http.StatusUnauthorized)
+					return
+				}
+
+				// Vérifier si l'ID utilisateur est déjà dans le contexte
+				if _, ok := r.Context().Value(UserIdContextKey).(string); ok {
+					// Si trouvé dans le contexte, continuer
+					next.ServeHTTP(w, r)
+					return
+				}
+
+				// Interroger la base de données pour obtenir l'ID utilisateur
+				var userID string
+				err := db.QueryRow("SELECT userId FROM Sessions WHERE sessionId = ?", token).Scan(&userID)
+				if err != nil {
+					if err == sql.ErrNoRows {
+						http.Error(w, "Unauthorized", http.StatusUnauthorized)
+					} else {
+						http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+					}
+					return
+				}
+
+				// Ajouter l'ID utilisateur au contexte
+				ctx := context.WithValue(r.Context(), UserIdContextKey, userID)
+
+				// Mettre à jour le cache avec le nouveau token et l'ID utilisateur
+				cache.Set(token, userID)
+
+				// Continuer avec le gestionnaire suivant
+				next.ServeHTTP(w, r.WithContext(ctx))
 				return
 			}
 
-			// Ajouter l'ID utilisateur au contexte
-			ctx := context.WithValue(r.Context(), UserIdContextKey, userID)
-
-			// Mettre à jour le cache avec le nouveau token et l'ID utilisateur
-			cache.Set(token, userID)
-
-			// Continuer avec le gestionnaire suivant
-			next.ServeHTTP(w, r.WithContext(ctx))
+			// Si le chemin d'URL ne nécessite pas d'authentification, passer à la requête suivante sans effectuer d'authentification
+			next.ServeHTTP(w, r)
 		})
 	}
 }
