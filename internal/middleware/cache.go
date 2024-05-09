@@ -1,52 +1,78 @@
-// middleware/authentication.go
 package middleware
 
 import (
 	"context"
-	"database/sql"
+	"log"
 	"net/http"
+	"sync"
+	"time"
 )
 
-func Authentication(db *sql.DB, cache *SessionCache) func(http.Handler) http.Handler {
+type SessionCache struct {
+	sync.Map
+	expiration time.Duration
+}
+
+func NewSessionCache(expiration time.Duration) *SessionCache {
+	return &SessionCache{expiration: expiration}
+}
+
+// Set ajoute une session dans le cache
+func (sc *SessionCache) Set(token string, userID string) {
+	sc.Store(token, userID)
+	// Expire l'entrée après la durée spécifiée
+	// supprime automatiquement les sessions out of date
+	go func() {
+		time.Sleep(sc.expiration)
+		sc.Delete(token)
+	}()
+}
+
+// Get récupère une session depuis le cache
+func (sc *SessionCache) Get(token string) (string, bool) {
+	if userID, found := sc.Load(token); found {
+		return userID.(string), true
+	}
+	return "", false
+}
+
+// this function catch cookie if there is one and check the cache for avoying
+// too much sql requests
+// CacheHandler ajoute des informations de session au contexte si elles sont dans le cache
+func CacheHandler(cache *SessionCache) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Récupérer le token de session du contexte
-			token, ok := r.Context().Value(SessionIdContextKey).(string)
-			if !ok {
-				http.Error(w, "Unauthorized", http.StatusUnauthorized)
-				return
-			}
-
-			// Vérifier si l'ID utilisateur est déjà dans le contexte
-			if _, ok := r.Context().Value(UserIdContextKey).(string); ok {
-				// Si trouvé dans le contexte, continuer
-				next.ServeHTTP(w, r)
-				return
-			}
-
-			// Interroger la base de données pour obtenir l'ID utilisateur
-			var userID string
-			err := db.QueryRow("SELECT userId FROM Sessions WHERE sessionId = ?", token).Scan(&userID)
+			// Récupérer le cookie contenant le jeton d'authentification
+			cookie, err := r.Cookie("session_token")
 			if err != nil {
-				if err == sql.ErrNoRows {
-					http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				if err == http.ErrNoCookie {
+					log.Println("No session cookie found")
 				} else {
+					log.Printf("Error retrieving session cookie: %v", err)
 					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+					return
 				}
-				return
+			} else {
+				// Ajouter le jeton de session au contexte
+				ctx := context.WithValue(r.Context(), SessionIdContextKey, cookie.Value)
+
+				// Vérifier si le token existe dans le cache
+				if userID, found := cache.Get(cookie.Value); found {
+					log.Printf("Session token %s found in cache for user %s", cookie.Value, userID)
+					ctx = context.WithValue(ctx, UserIdContextKey, userID)
+				}
+
+				// Passer le contexte mis à jour
+				r = r.WithContext(ctx)
 			}
 
-			// Ajouter l'ID utilisateur au contexte
-			ctx := context.WithValue(r.Context(), UserIdContextKey, userID)
-
-			// Mettre à jour le cache avec le nouveau token et l'ID utilisateur
-			cache.Set(token, userID)
-
-			// Continuer avec le gestionnaire suivant
-			next.ServeHTTP(w, r.WithContext(ctx))
+			// Continuer avec le prochain gestionnaire dans la chaîne
+			next.ServeHTTP(w, r)
 		})
 	}
 }
+
+//je n ai peut etre besoin que de l id de session
 
 /*
 Oui, un client peut avoir besoin d'accéder simultanément à de nombreuses données mises en cache. C'est précisément pourquoi l'utilisation d'une structure concurrente comme `sync.Map` ou d'un autre mécanisme de cache est utile. Voici les raisons pour lesquelles un cache efficace est essentiel dans ce contexte :

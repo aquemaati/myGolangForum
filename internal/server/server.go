@@ -2,25 +2,15 @@ package server
 
 import (
 	"crypto/tls"
-	"database/sql"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
+	"github.com/aquemaati/myGolangForum.git/database"
 	"github.com/aquemaati/myGolangForum.git/internal/config"
 	"github.com/aquemaati/myGolangForum.git/internal/controller"
 	"github.com/aquemaati/myGolangForum.git/internal/middleware"
 )
-
-// Initialise la base de données (fonction simplifiée)
-func initDatabase(dbPath string) (*sql.DB, error) {
-	absPath, err := filepath.Abs(dbPath)
-	if err != nil {
-		return nil, err
-	}
-	return sql.Open("mysql", absPath)
-}
 
 // Initialise le cache de session
 func initSessionCache() *middleware.SessionCache {
@@ -41,7 +31,7 @@ func InitializeServer(envFilePath, dbPath string) (*http.Server, error) {
 	}
 
 	// Initialise la base de données et le cache
-	db, err := initDatabase(dbPath)
+	db, err := database.InitDatabase(dbPath)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +45,9 @@ func InitializeServer(envFilePath, dbPath string) (*http.Server, error) {
 	handler := middleware.Recovery(
 		middleware.SecurityHeaders(
 			middleware.Logging(
-				middleware.AuthenticationWithCache(db, sessionCache)(mux),
+				middleware.CacheHandler(sessionCache)( // Exécute le cache avant l'authentification
+					middleware.Authentication(db, sessionCache)(mux),
+				),
 			),
 		),
 	)
