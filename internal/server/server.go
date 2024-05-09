@@ -41,12 +41,14 @@ func InitializeServer(envFilePath, dbPath string) (*http.Server, error) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", controller.Home)
 
-	// Ajoutez les middlewares
+	// Chaîne de middlewares
 	handler := middleware.Recovery(
 		middleware.SecurityHeaders(
 			middleware.Logging(
-				middleware.CacheHandler(sessionCache)( // Exécute le cache avant l'authentification
-					middleware.Authentication(db, sessionCache)(mux),
+				middleware.ParseForm( // Ajoutez le parsing du formulaire avant les autres middlewares
+					middleware.CacheHandler(sessionCache)(
+						middleware.Authentication(db, sessionCache)(mux),
+					),
 				),
 			),
 		),

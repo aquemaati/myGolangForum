@@ -6,3 +6,5 @@ type ContextKey string
 const UserIdContextKey ContextKey = "userID"
 
 const SessionIdContextKey ContextKey = "authStatus"
+
+const FormDataKey ContextKey = "formData"
