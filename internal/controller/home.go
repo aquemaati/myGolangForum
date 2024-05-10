@@ -25,22 +25,23 @@ func Home(db *sql.DB, tpl *template.Template) http.Handler {
 		// Exemple simple d'une réponse HTML
 
 		userID, ok := r.Context().Value(middleware.UserIdContextKey).(string)
+		index := Index{}
 		if !ok {
 			// Handle the case where the userID is missing or of an incorrect type
 			log.Println("User ID not found in context", http.StatusUnauthorized)
+		} else {
+
+			user, err := model.GetUserById(db, userID)
+			if err != nil {
+				http.Error(w, "could not get user infos "+err.Error(), http.StatusInternalServerError)
+				log.Panicln(err)
+				return
+			}
+			index.UserInfos = user
 		}
 
 		fmt.Println("Retrieved User ID:", userID)
-		index := Index{}
 		index.UserID = userID
-
-		user, err := model.GetUserById(db, userID)
-		if err != nil {
-			http.Error(w, "could not get user infos "+err.Error(), http.StatusInternalServerError)
-			log.Panicln(err)
-			return
-		}
-		index.UserInfos = user
 
 		posts, err := model.FetchExtendedPostsWithComments(db, nil, nil)
 		if err != nil {
