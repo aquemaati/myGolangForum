@@ -65,7 +65,7 @@ func InitializeServer(envFilePath, dbPath string) (*http.Server, error) {
 	mux.Handle("/submit-signup", controller.SignUpSubmission(db, tpl))
 	mux.Handle("/signup", controller.SignUp(db, tpl))
 	mux.Handle("/signin", controller.SignIn(tpl))
-	mux.Handle("/submit-signin", controller.SignInSubmit(tpl))
+	mux.Handle("/submit-signin", controller.SignInSubmit(db, tpl))
 	mux.Handle("/disconnect", controller.Disconnect(db, tpl))
 
 	// Chaîne de middlewares

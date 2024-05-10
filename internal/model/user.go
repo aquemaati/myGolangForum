@@ -2,6 +2,7 @@ package model
 
 import (
 	"database/sql"
+	"errors"
 	"log"
 	"time"
 
@@ -23,7 +24,23 @@ type UserPublic struct {
 	Image    string
 }
 
-func ScanUserInfo(row *sql.Row) (UserPublic, error) {
+func ScanUser(rows *sql.Row) (User, error) {
+	var user User
+	err := rows.Scan(
+		&user.ID,
+		&user.UserName,
+		&user.Email,
+		&user.Password,
+		&user.Date,
+		&user.Image,
+	)
+	if err != nil {
+		return User{}, err
+	}
+	return user, nil
+}
+
+func ScanUserPublic(row *sql.Row) (UserPublic, error) {
 	var user UserPublic
 	err := row.Scan(&user.UserName, &user.Image)
 	if err != nil {
@@ -59,7 +76,26 @@ func CreateUserInDB(db *sql.DB, username, email, password string) (User, error) 
 	}, nil
 }
 
-func GetUserById(db *sql.DB, userId string) (UserPublic, error) {
+func GetUserPublicById(db *sql.DB, userId string) (UserPublic, error) {
 	query := `SELECT userName, image FROM Users WHERE id = ?`
-	return ExecuteSingleQuery(db, query, ScanUserInfo, userId)
+	return ExecuteSingleQuery(db, query, ScanUserPublic, userId)
+}
+
+func CheckUserSignIn(db *sql.DB, email string, password string) (User, error) {
+	// Prepare the SQL statement for execution
+	query := "SELECT id, userName, email, password, date, image FROM Users WHERE email = ?"
+	user, err := ExecuteSingleQuery(db, query, ScanUser, email)
+
+	if err != nil {
+		return User{}, errors.New("email does not match in database")
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if err != nil {
+		log.Printf("Password does not match: %v", err)
+		return User{}, errors.New("password does not match in database")
+	}
+
+	// Return the user object if found
+	return user, nil
 }

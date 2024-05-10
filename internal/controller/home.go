@@ -31,7 +31,7 @@ func Home(db *sql.DB, tpl *template.Template) http.Handler {
 			log.Println("User ID not found in context", http.StatusUnauthorized)
 		} else {
 
-			user, err := model.GetUserById(db, userID)
+			user, err := model.GetUserPublicById(db, userID)
 			if err != nil {
 				http.Error(w, "could not get user infos "+err.Error(), http.StatusInternalServerError)
 				log.Panicln(err)

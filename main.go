@@ -2,15 +2,14 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"os"
 
 	"github.com/aquemaati/myGolangForum.git/internal/server"
 )
 
 func main() {
-	fs := http.FileServer(http.Dir("static/"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	// fs := http.FileServer(http.Dir("static/"))
+	// http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	server, err := server.InitializeServer(".env", "database/database.db")
 	if err != nil {
