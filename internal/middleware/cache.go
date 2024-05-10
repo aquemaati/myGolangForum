@@ -44,23 +44,24 @@ func CacheHandler(cache *SessionCache) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Récupérer le cookie contenant le jeton d'authentification
 			cookie, err := r.Cookie("session_token")
-			if err != nil {
+			if err != nil { // if no cookie
 				if err == http.ErrNoCookie {
-					log.Println("No session cookie found")
+					log.Println("No session cookie found") // go to next middleware
 				} else {
 					log.Printf("Error retrieving session cookie: %v", err)
 					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 					return
 				}
-			} else {
+			} else { //if ther is a cookie
 				// Ajouter le jeton de session au contexte
+				log.Println("cookie foud")
 				ctx := context.WithValue(r.Context(), SessionIdContextKey, cookie.Value)
-
-				// Vérifier si le token existe dans le cache
+				// Vérifier si le token existe dans le cache pour obtenur l userId
 				if userID, found := cache.Get(cookie.Value); found {
 					log.Printf("Session token %s found in cache for user %s", cookie.Value, userID)
 					ctx = context.WithValue(ctx, UserIdContextKey, userID)
-				}
+				} // si pas dans le cache, on passe a authentication pour recuperer lluser id dans
+				// la base de donnees
 
 				// Passer le contexte mis à jour
 				r = r.WithContext(ctx)

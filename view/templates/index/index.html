@@ -1,5 +1,6 @@
 {{template "header"}}
 {{template "nav"}}
+<h1>Welcome {{.UserInfos}}</h1>
 {{template "filter" .}}
 {{range .Posts}}
      {{template "posts" .}}

@@ -4,6 +4,7 @@ package middleware
 import (
 	"context"
 	"database/sql"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -11,67 +12,73 @@ import (
 func Authentication(db *sql.DB, cache *SessionCache, protectedPaths []string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Récupérer le chemin d'URL de la requête
-			requestPath := r.URL.Path
-
-			// Vérifier si le chemin d'URL nécessite une authentification
-			requiresAuthentication := false
+			// Check if the requested path requires authentication
+			requiresAuth := false
 			for _, path := range protectedPaths {
-				if strings.HasPrefix(requestPath, path) {
-					requiresAuthentication = true
+				if strings.HasPrefix(r.URL.Path, path) {
+					requiresAuth = true
 					break
 				}
 			}
 
-			// Si le chemin d'URL nécessite une authentification
-			if requiresAuthentication {
-				// Récupérer le token de session du contexte
-				token, ok := r.Context().Value(SessionIdContextKey).(string)
-				if !ok {
-					http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			// Retrieve the session token from the context
+			token, ok := r.Context().Value(SessionIdContextKey).(string)
+			if !ok {
+				// Token not present in context
+				if requiresAuth {
+					http.Redirect(w, r, "/signup", http.StatusFound)
 					return
 				}
+				next.ServeHTTP(w, r)
+				return
+			}
 
-				// Vérifier si l'ID utilisateur est déjà dans le contexte
-				if _, ok := r.Context().Value(UserIdContextKey).(string); ok {
-					// Si trouvé dans le contexte, continuer
-					next.ServeHTTP(w, r)
-					return
-				}
+			// Check if user ID is already in the context
+			if userID, ok := r.Context().Value(UserIdContextKey).(string); ok {
+				next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), UserIdContextKey, userID)))
+				return
+			}
 
-				// Interroger la base de données pour obtenir l'ID utilisateur
-				var userID string
-				err := db.QueryRow("SELECT userId FROM Sessions WHERE sessionId = ?", token).Scan(&userID)
-				if err != nil {
-					if err == sql.ErrNoRows {
-						http.Error(w, "Unauthorized", http.StatusUnauthorized)
-					} else {
-						http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-					}
-					return
-				}
-
-				// Ajouter l'ID utilisateur au contexte
+			// Check cache first
+			if userID, found := cache.Get(token); found {
+				// Add user ID to the context and proceed
 				ctx := context.WithValue(r.Context(), UserIdContextKey, userID)
-
-				// Mettre à jour le cache avec le nouveau token et l'ID utilisateur
-				cache.Set(token, userID)
-
-				// Continuer avec le gestionnaire suivant
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
 			}
 
-			// Si le chemin d'URL ne nécessite pas d'authentification, passer à la requête suivante sans effectuer d'authentification
-			next.ServeHTTP(w, r)
+			// Query the database if not in the cache
+			var userID string
+			log.Println("searching in db, no cache")
+			err := db.QueryRow("SELECT userId FROM Sessions WHERE sessionId = ?", token).Scan(&userID)
+			if err != nil {
+				if err == sql.ErrNoRows {
+					if requiresAuth {
+						http.Redirect(w, r, "/signup", http.StatusFound)
+					} else {
+						http.Error(w, "Unauthorized: Invalid session token", http.StatusUnauthorized)
+					}
+					return
+				}
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				log.Printf("Database error querying session: %v", err)
+				return
+			}
+
+			// Cache the session token and user ID
+			cache.Set(token, userID)
+
+			// Add user ID to the context and proceed
+			ctx := context.WithValue(r.Context(), UserIdContextKey, userID)
+			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
 /*
-Oui, un client peut avoir besoin d'accéder simultanément à de nombreuses données mises en cache. C'est précisément pourquoi l'utilisation d'une structure concurrente comme `sync.Map` ou d'un autre mécanisme de cache est utile. Voici les raisons pour lesquelles un cache efficace est essentiel dans ce contexte :
+	Oui, un client peut avoir besoin d'accéder simultanément à de nombreuses données mises en cache. C'est précisément pourquoi l'utilisation d'une structure concurrente comme `sync.Map` ou d'un autre mécanisme de cache est utile. Voici les raisons pour lesquelles un cache efficace est essentiel dans ce contexte :
 
-### Besoins du Client pour un Cache Simultané :
+	### Besoins du Client pour un Cache Simultané :
 
 1. **Accès Concurentiel:**
    - Plusieurs goroutines (ou requêtes) du client peuvent tenter d'accéder ou de mettre à jour différentes données en même temps.
