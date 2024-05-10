@@ -58,6 +58,8 @@ func InitializeServer(envFilePath, dbPath string) (*http.Server, error) {
 
 	// Créez un multiplexer
 	mux := http.NewServeMux()
+	mux.Handle("/view/assets/", http.StripPrefix("/view/assets/", http.FileServer(http.Dir("view/assets"))))
+
 	mux.Handle("/", controller.Home(db, tpl))
 	mux.Handle("/test", controller.Test(db, tpl))
 	mux.Handle("/filtered-home", controller.FilteredHome(db, tpl))
