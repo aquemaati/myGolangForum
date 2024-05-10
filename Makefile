@@ -2,7 +2,7 @@
 APP_NAME := my-go-app
 
 # Variables
-MAIN_FILE := cmd/rumy/main.go
+MAIN_FILE := main.go
 
 # Spécifiez les outils à utiliser
 GO := go

@@ -1,0 +1,10 @@
+{{define "comments"}}
+{{range .}}
+<p>@@@@@@@@@@@@@@@@@@@COMMENT@@@@@@@@@@@@@@@@@@@@@@@</p>
+<h3>{{.UserName}}</h3>
+<p>{{.Date}}</p>
+<p>LOVE {{.LoveNumb}}</p>
+<p>HATE {{.HateNumb}}</p>
+<p>{{.Content}}</p>
+{{end}}
+{{end}}

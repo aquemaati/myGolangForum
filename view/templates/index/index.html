@@ -1,0 +1,7 @@
+{{template "header"}}
+{{template "nav"}}
+{{template "filter" .}}
+{{range .Posts}}
+     {{template "posts" .}}
+{{end}}
+{{template "footer"}}

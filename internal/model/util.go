@@ -39,3 +39,5 @@ func ExecuteQuery[T any](db *sql.DB, query string, scanFunc func(*sql.Rows) (T, 
 
 	return results, nil
 }
+
+//In summary, use db.QueryRow for queries that you know will always return one row or expect a unique

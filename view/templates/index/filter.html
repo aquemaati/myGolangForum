@@ -1,0 +1,15 @@
+{{define "filter"}}
+{{range .Cat}}
+<form method="GET" action="/filtered-home"> 
+     <div class="filter-categories">
+         <input type="submit" class="categories-button" name="category" value="{{.Name}}">
+     </div>
+     {{end}}
+
+     <div class="filter-user">
+        <input type="submit" name="created" value="my posts">
+        <input type="submit" name="liked" value="my loves">
+        <input type="submit" name="hated" value="my hates">
+    </div>
+ </form>
+ {{end}}

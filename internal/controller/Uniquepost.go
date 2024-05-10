@@ -2,32 +2,34 @@ package controller
 
 import (
 	"database/sql"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
 
+	"github.com/aquemaati/myGolangForum.git/internal/middleware"
 	"github.com/aquemaati/myGolangForum.git/internal/model"
 )
 
-type Index struct {
-	Cat   []model.Categorie
-	Posts []model.PostInfo
-}
-
-// HomeHandler handles the root path
-func Home(db *sql.DB, tpl *template.Template) http.Handler {
+func UniquePost(db *sql.DB, tpl *template.Template) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Implémentation de la page d'accueil
-		// Exemple simple d'une réponse HTML
+
+		formData := r.Context().Value(middleware.FormDataKey).(map[string][]string)
+
+		postId := formData["postId"][0]
+		fmt.Println(postId)
+		postIdInt, _ := strconv.Atoi(postId)
+
 		index := Index{}
 
-		posts, err := model.FetchExtendedPostsWithComments(db, nil, nil)
+		posts, err := model.FetchUniquePost(db, postIdInt)
 		if err != nil {
 			http.Error(w, "could not get posts infos "+err.Error(), http.StatusInternalServerError)
 			log.Panicln(err)
 			return
 		}
-		index.Posts = posts
+		index.Posts = append(index.Posts, posts)
 
 		cats, err := model.FetchCat(db)
 		if err != nil {
@@ -40,5 +42,7 @@ func Home(db *sql.DB, tpl *template.Template) http.Handler {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
 	})
+
 }

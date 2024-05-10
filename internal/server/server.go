@@ -2,8 +2,11 @@ package server
 
 import (
 	"crypto/tls"
+	"html/template"
+	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/aquemaati/myGolangForum.git/database"
@@ -15,6 +18,19 @@ import (
 // Initialise le cache de session
 func initSessionCache() *middleware.SessionCache {
 	return middleware.NewSessionCache(10 * time.Minute)
+}
+
+// InitTemplate initialise les templates et configure le serveur de fichiers statiques
+var tpl *template.Template
+
+func InitTemplates() {
+	// Charger les templates absolus
+	absTemplatesPath, err := filepath.Abs("view/templates/**/*.html")
+	if err != nil {
+		log.Fatalf("Error getting absolute path for templates: %v", err)
+	}
+	tpl = template.Must(template.ParseGlob(absTemplatesPath))
+
 }
 
 // Initialise le serveur HTTP
@@ -36,12 +52,18 @@ func InitializeServer(envFilePath, dbPath string) (*http.Server, error) {
 		return nil, err
 	}
 	sessionCache := initSessionCache()
+	InitTemplates()
 
 	protectedPaths := []string{"/admin", "/user"}
 
 	// Créez un multiplexer
 	mux := http.NewServeMux()
-	mux.Handle("/", controller.Home(db))
+	mux.Handle("/", controller.Home(db, tpl))
+	mux.Handle("/test", controller.Test(db, tpl))
+	mux.Handle("/filtered-home", controller.FilteredHome(db, tpl))
+	mux.Handle("/postbyid", controller.UniquePost(db, tpl))
+	mux.Handle("/submit-signup", controller.SignUpSubmission(db, tpl))
+	mux.Handle("/signup", controller.SignUp(db, tpl))
 
 	// Chaîne de middlewares
 	handler := middleware.Recovery(

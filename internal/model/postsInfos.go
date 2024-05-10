@@ -1,35 +1,32 @@
 package model
 
-import "database/sql"
+import (
+	"database/sql"
+	"fmt"
+	"strings"
+	"time"
+)
 
 type PostInfo struct {
 	PostId        int
+	UserId        string
 	UserImage     string
 	UserName      string
-	PostDate      string
+	PostDate      time.Time
 	LoveNumb      int
 	HateNumb      int
 	Title         string
 	Description   string
-	CategoryNames string
+	CategoryNames []string
 	Comments      []CommentInfo
 }
 
-type CommentInfo struct {
-	PostId    int
-	CommentId int
-	UserImage string
-	UserName  string
-	Date      string
-	LoveNumb  int
-	HateNumb  int
-	Content   string
-}
-
 func ScanPostInfo(rows *sql.Rows) (PostInfo, error) {
+	var categoryNames string
 	var p PostInfo
 	err := rows.Scan(
 		&p.PostId,
+		&p.UserId,
 		&p.UserImage,
 		&p.UserName,
 		&p.PostDate,
@@ -37,48 +34,50 @@ func ScanPostInfo(rows *sql.Rows) (PostInfo, error) {
 		&p.HateNumb,
 		&p.Title,
 		&p.Description,
-		&p.CategoryNames,
+		&categoryNames,
 	)
 	if err != nil {
 		return PostInfo{}, err
 	}
+	// Diviser la chaîne en un tableau
+	if categoryNames != "" {
+		p.CategoryNames = strings.Split(categoryNames, ",")
+	}
 	return p, nil
 }
 
-func ScanCommentInfo(rows *sql.Rows) (CommentInfo, error) {
-	var c CommentInfo
-	err := rows.Scan(
-		&c.PostId,
-		&c.CommentId,
-		&c.UserImage,
-		&c.UserName,
-		&c.Date,
-		&c.LoveNumb,
-		&c.HateNumb,
-		&c.Content,
-	)
-	if err != nil {
-		return CommentInfo{}, err
+func FetchPosts(db *sql.DB, userId *string, category *string) ([]PostInfo, error) {
+	query := `
+	    SELECT postId, userId, userImage, userName, postDate, loveNumb, hateNumb, title, description, categoryNames
+	    FROM ExtendedPostsInfosView
+	    WHERE 1 = 1`
+	args := []interface{}{}
+
+	if userId != nil {
+		query += " AND userId = ?"
+		args = append(args, *userId)
 	}
-	return c, nil
+
+	if category != nil {
+		catPattern := fmt.Sprintf("%%%s%%", *category)
+		query += " AND categoryNames LIKE ?"
+		args = append(args, catPattern)
+	}
+
+	return ExecuteQuery(db, query, ScanPostInfo, args...)
 }
 
-func FetchExtendedPostsWithComments(db *sql.DB) ([]PostInfo, error) {
-	// Récupérer les posts
-	queryPosts := "SELECT postId, userImage, userName, postDate, loveNumb, hateNumb, title, description, categoryNames FROM ExtendedPostsInfosView"
-	posts, err := ExecuteQuery(db, queryPosts, ScanPostInfo)
+func FetchExtendedPostsWithComments(db *sql.DB, userId *string, category *string) ([]PostInfo, error) {
+	posts, err := FetchPosts(db, userId, category)
 	if err != nil {
 		return nil, err
 	}
 
-	// Récupérer les commentaires
-	queryComments := "SELECT postId, commentId, userImage, userName, date, loveNumb, hateNumb, content FROM CommentsInfosView"
-	comments, err := ExecuteQuery(db, queryComments, ScanCommentInfo)
+	comments, err := FetchComments(db)
 	if err != nil {
 		return nil, err
 	}
 
-	// Associer les commentaires aux posts
 	postMap := make(map[int]*PostInfo)
 	for i := range posts {
 		postMap[posts[i].PostId] = &posts[i]
@@ -91,4 +90,55 @@ func FetchExtendedPostsWithComments(db *sql.DB) ([]PostInfo, error) {
 	}
 
 	return posts, nil
+}
+
+func FetchUniquePost(db *sql.DB, postId int) (PostInfo, error) {
+	var postInfo PostInfo
+	var categoryNames string
+
+	// Define the query to fetch the specific post by postId
+	query := `
+		SELECT postId, userId, userImage, userName, postDate, loveNumb, hateNumb, title, description, categoryNames
+		FROM ExtendedPostsInfosView
+		WHERE postId = ?
+	`
+	// Prepare the statement
+	stmt, err := db.Prepare(query)
+	if err != nil {
+		return PostInfo{}, err
+	}
+	defer stmt.Close()
+
+	// Execute the query and scan the result into postInfo
+	err = stmt.QueryRow(postId).Scan(
+		&postInfo.PostId,
+		&postInfo.UserId,
+		&postInfo.UserImage,
+		&postInfo.UserName,
+		&postInfo.PostDate,
+		&postInfo.LoveNumb,
+		&postInfo.HateNumb,
+		&postInfo.Title,
+		&postInfo.Description,
+		&categoryNames,
+	)
+	if err != nil {
+		return PostInfo{}, err
+	}
+
+	// Convert category names to a slice
+	if categoryNames != "" {
+		postInfo.CategoryNames = strings.Split(categoryNames, ",")
+	}
+
+	// Fetch comments associated with this post
+	comments, err := FetchCommentsByPostId(db, postId)
+	if err != nil {
+		return PostInfo{}, err
+	}
+
+	// Assign comments to the post's Comments field
+	postInfo.Comments = comments
+
+	return postInfo, nil
 }

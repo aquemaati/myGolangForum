@@ -1,0 +1,40 @@
+{{define "posts"}}
+<p>------------------------POST----------------------------------------------------</p>
+<h3>{{.UserName}}</h3>
+<p>{{.PostDate}}</p>
+<!-- Formulaire pour "Love" -->
+<form action="/post-sentiment" method="POST" style="display: inline;">
+     <input type="hidden" name="postId" value="{{.PostId}}">
+     <input type="hidden" name="sentiment" value="love">
+     <button type="submit" >
+         Love {{.LoveNumb}}
+     </button>
+ </form>
+
+ <!-- Formulaire pour "Hate" -->
+ <form action="/post-sentiment" method="POST" style="display: inline;">
+     <input type="hidden" name="postId" value="{{.PostId}}">
+     <input type="hidden" name="sentiment" value="hate">
+     <button type="submit" >
+         Hate {{.HateNumb}}
+     </button>
+ </form>
+
+ <!-- Formulaire pour acceder a un poste by id -->
+<form action="/postbyid" method="GET" style="display: inline;">
+     <input type="hidden" name="postId" value="{{.PostId}}">
+     <button type="submit" >
+          <h2>
+         {{.Title}}
+     </h2>
+     </button>
+ </form>
+
+<h3>{{.Description}}</h3>
+{{range .CategoryNames}}
+<button>{{.}}</button>
+{{end}}
+{{template "addComment"}}
+{{template "comments".Comments}}
+
+{{end}}
