@@ -4,15 +4,17 @@ package middleware
 import (
 	"context"
 	"database/sql"
-	"log"
+	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/aquemaati/myGolangForum.git/internal/model"
 )
 
+// Authentication middleware
 func Authentication(db *sql.DB, cache *SessionCache, protectedPaths []string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Check if the requested path requires authentication
 			requiresAuth := false
 			for _, path := range protectedPaths {
 				if strings.HasPrefix(r.URL.Path, path) {
@@ -21,54 +23,58 @@ func Authentication(db *sql.DB, cache *SessionCache, protectedPaths []string) fu
 				}
 			}
 
-			// Retrieve the session token from the context
-			token, ok := r.Context().Value(SessionIdContextKey).(string)
-			if !ok {
-				// Token not present in context
-				if requiresAuth {
-					http.Redirect(w, r, "/signup", http.StatusFound)
-					return
-				}
+			// Retrieve the JWT from the cookie
+			cookie, err := r.Cookie("session_token") // Assuming 'session_token' is the name of the cookie containing the JWT
+			if err != nil && requiresAuth {
+				// No token provided and path requires authentication
+				http.Error(w, "Unauthorized: No token provided", http.StatusUnauthorized)
+				return
+			} else if err != nil {
+				// No token provided but path does not require authentication
 				next.ServeHTTP(w, r)
 				return
 			}
 
-			// Check if user ID is already in the context
-			if userID, ok := r.Context().Value(UserIdContextKey).(string); ok {
-				next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), UserIdContextKey, userID)))
+			token := cookie.Value
+			fmt.Println(token)
+
+			// Parse and validate the JWT
+			claims, err := model.ParseJWT(token)
+			if err != nil && requiresAuth {
+				http.Error(w, "Unauthorized: "+err.Error(), http.StatusUnauthorized)
+				return
+			} else if err != nil {
+				// Invalid token but path does not require authentication
+				next.ServeHTTP(w, r)
 				return
 			}
-
-			// Check cache first
-			if userID, found := cache.Get(token); found {
-				// Add user ID to the context and proceed
-				ctx := context.WithValue(r.Context(), UserIdContextKey, userID)
-				next.ServeHTTP(w, r.WithContext(ctx))
+			fmt.Println(claims)
+			userID, ok := claims[string(UserIdContextKey)].(string)
+			if !ok && requiresAuth {
+				http.Error(w, "Unauthorized: Unable to parse userID", http.StatusUnauthorized)
+				return
+			} else if !ok {
+				// Cannot parse userID but path does not require authentication
+				next.ServeHTTP(w, r)
 				return
 			}
+			fmt.Println(userID)
 
-			// Query the database if not in the cache
-			var userID string
-			log.Println("searching in db, no cache")
-			err := db.QueryRow("SELECT userId FROM Sessions WHERE sessionId = ?", token).Scan(&userID)
-			if err != nil {
-				if err == sql.ErrNoRows {
-					if requiresAuth {
-						http.Redirect(w, r, "/signup", http.StatusFound)
-					} else {
-						http.Error(w, "Unauthorized: Invalid session token", http.StatusUnauthorized)
-					}
-					return
+			// Verify if the session is still active
+			var sessionCount int
+			err = db.QueryRow("SELECT COUNT(*) FROM Sessions WHERE JWT = ? AND UserID = ? AND ExpiresAt > CURRENT_TIMESTAMP", token, userID).Scan(&sessionCount)
+			if err != nil || sessionCount == 0 {
+				if requiresAuth {
+					http.Error(w, "Unauthorized: Session is not active or does not exist", http.StatusUnauthorized)
+				} else {
+					fmt.Println("Non-authenticated path accessed with invalid session")
+					next.ServeHTTP(w, r)
 				}
-				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-				log.Printf("Database error querying session: %v", err)
 				return
 			}
 
-			// Cache the session token and user ID
-			cache.Set(token, userID)
-
-			// Add user ID to the context and proceed
+			fmt.Println("here is the context")
+			// Pass user ID to the context of the next request
 			ctx := context.WithValue(r.Context(), UserIdContextKey, userID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})

@@ -1,10 +1,12 @@
-package middleware
+package middleware_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/aquemaati/myGolangForum.git/internal/middleware"
 )
 
 // Mock handler that will be wrapped by the logging middleware
@@ -25,7 +27,7 @@ func TestLoggingMiddleware(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	// Wrap the mock handler in the logging middleware
-	handler := Logging(http.HandlerFunc(mockHandler))
+	handler := middleware.Logging(http.HandlerFunc(mockHandler))
 
 	// Call the handler with the request and response recorder
 	handler.ServeHTTP(rr, req)

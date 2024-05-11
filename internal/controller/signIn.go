@@ -37,7 +37,7 @@ func SignInSubmit(db *sql.DB, tpl *template.Template) http.HandlerFunc {
 			return
 		}
 		// create session with JWT
-		jwt, err := model.GenerateJWT(db, user.ID)
+		jwt, err := model.GenerateJWT(db, user.ID, string(middleware.UserIdContextKey))
 		if err != nil {
 			log.Println("could not create session in database", err)
 			http.Redirect(w, r, "/", http.StatusSeeOther)

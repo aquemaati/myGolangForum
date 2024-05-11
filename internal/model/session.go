@@ -48,7 +48,7 @@ func SessionValid(s Session) bool {
 
 // DeleteSession removes a session from the database
 func DeleteSession(db *sql.DB, sessionID string) error {
-	query := "DELETE FROM Sessions WHERE sessionId = ?"
+	query := "DELETE FROM Sessions WHERE SessionID = ?"
 	_, err := ExecuteNonQuery(db, query, sessionID)
 	return err
 }

@@ -1,4 +1,3 @@
-// middleware/context.go
 package middleware
 
 type ContextKey string
