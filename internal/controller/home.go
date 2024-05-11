@@ -21,8 +21,6 @@ type Index struct {
 // HomeHandler handles the root path
 func Home(db *sql.DB, tpl *template.Template) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Implémentation de la page d'accueil
-		// Exemple simple d'une réponse HTML
 
 		userID, ok := r.Context().Value(middleware.UserIdContextKey).(string)
 		index := Index{}
@@ -30,7 +28,9 @@ func Home(db *sql.DB, tpl *template.Template) http.Handler {
 			// Handle the case where the userID is missing or of an incorrect type
 			log.Println("User ID not found in context", http.StatusUnauthorized)
 		} else {
-
+			fmt.Println("Retrieved User ID:", userID)
+			index.UserID = userID
+			// Get user public infos in db
 			user, err := model.GetUserPublicById(db, userID)
 			if err != nil {
 				http.Error(w, "could not get user infos "+err.Error(), http.StatusInternalServerError)
@@ -40,9 +40,7 @@ func Home(db *sql.DB, tpl *template.Template) http.Handler {
 			index.UserInfos = user
 		}
 
-		fmt.Println("Retrieved User ID:", userID)
-		index.UserID = userID
-
+		// obtenir tous le posts infos in the db
 		posts, err := model.FetchExtendedPostsWithComments(db, nil, nil)
 		if err != nil {
 			http.Error(w, "could not get posts infos "+err.Error(), http.StatusInternalServerError)
@@ -51,6 +49,7 @@ func Home(db *sql.DB, tpl *template.Template) http.Handler {
 		}
 		index.Posts = posts
 
+		// get categorys from db
 		cats, err := model.FetchCat(db)
 		if err != nil {
 			http.Error(w, "could not get cat infos "+err.Error(), http.StatusInternalServerError)

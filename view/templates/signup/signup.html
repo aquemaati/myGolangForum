@@ -1,5 +1,6 @@
 {{template "header"}}
 <h2>Signup Form</h2>
+<h4>message d erreur ici</h4>
         <form action="/submit-signup" method="POST">
             <label for="email">Email:</label>
             <input type="email" id="email" name="email" required>
@@ -8,10 +9,10 @@
             <input type="text" id="username" name="username" required>
 
             <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required>
+            <input type="password" id="password" name="password" minlength="8" required>
 
             <label for="confirm-password">Confirm Password Please:</label>
-            <input type="password" id="confirm-password" name="confirmPassword" required>
+            <input type="password" id="confirm-password" name="confirmPassword" minlength="8" required>
 
             <button type="submit">Sign Up</button>
         </form>

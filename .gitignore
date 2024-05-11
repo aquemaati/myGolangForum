@@ -24,3 +24,6 @@ TODO.txt
 .DS_Store
 
 internal/middleware/middleware.txt
+
+jwt.go
+tmp

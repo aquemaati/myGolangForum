@@ -39,6 +39,7 @@ func SignInSubmit(db *sql.DB, tpl *template.Template) http.HandlerFunc {
 		sess, err := model.CreateSession(db, user.ID, 24*time.Hour)
 		if err != nil {
 			log.Println("could not create session in database", err)
+			http.Redirect(w, r, "/", http.StatusSeeOther)
 		}
 		// create cookie
 		model.SetCookie(w, "session_token", sess.SessionID, sess.ExpiresAt, true, "/")
