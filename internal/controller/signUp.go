@@ -38,17 +38,19 @@ func SignUpSubmission(db *sql.DB, tpl *template.Template) http.HandlerFunc {
 			return
 		}
 
-		//creating a session
-		sess, err := model.CreateSession(db, user.ID, 24*time.Hour)
+		// create session with JWT
+		jwt, err := model.GenerateJWT(db, user.ID)
 		if err != nil {
-			http.Error(w, "Could not insert new session in database: "+err.Error(), http.StatusBadRequest)
-			return
+			log.Println("could not create session in database", err)
+			http.Redirect(w, r, "/", http.StatusSeeOther)
 		}
-
-		//set cookie
-		model.SetCookie(w, "session_token", sess.SessionID, sess.ExpiresAt, true, "/")
-
-		log.Println("new user created: ", username)
-		tpl.ExecuteTemplate(w, "index.html", nil)
+		// create cookie
+		model.SetCookie(w, "session_token", jwt, time.Now().Add(24*time.Hour), true, "/")
+		// Redirect to the last accessed page or default to a home/dashboard page
+		redirectURL := r.URL.Query().Get("redirect")
+		if redirectURL == "" {
+			redirectURL = "/" // Default page if no specific redirect provided
+		}
+		http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 	}
 }
