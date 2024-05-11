@@ -23,26 +23,27 @@ func SignInSubmit(db *sql.DB, tpl *template.Template) http.HandlerFunc {
 		formData := r.Context().Value(middleware.FormDataKey).(map[string][]string)
 
 		//Step for signin
-		// check credentials (username, password)
+		// check credentials (username, password) from the form
 
 		email := formData["email"][0]
 		password := formData["password"][0]
 		fmt.Println("look here")
 		fmt.Println(email, password)
 
+		//check match in db TODO: creqte propper error messqges
 		user, err := model.CheckUserSignIn(db, email, password)
 		if err != nil {
 			http.Error(w, "error whilee connecting", http.StatusBadRequest)
 			return
 		}
-		// create session
-		sess, err := model.CreateSession(db, user.ID, 24*time.Hour)
+		// create session with JWT
+		jwt, err := model.GenerateJWT(db, user.ID)
 		if err != nil {
 			log.Println("could not create session in database", err)
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 		}
 		// create cookie
-		model.SetCookie(w, "session_token", sess.SessionID, sess.ExpiresAt, true, "/")
+		model.SetCookie(w, "session_token", jwt, time.Now().Add(24*time.Hour), true, "/")
 		// Redirect to the last accessed page or default to a home/dashboard page
 		redirectURL := r.URL.Query().Get("redirect")
 		if redirectURL == "" {
