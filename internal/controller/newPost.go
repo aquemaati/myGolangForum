@@ -25,6 +25,7 @@ func NewPost(db *sql.DB, tpl *template.Template) http.Handler {
 			return
 		}
 		index.Cat = cats
+
 		err = tpl.ExecuteTemplate(w, "createPost.html", index)
 		if err != nil {
 			http.Error(w, "Error rendering page: "+err.Error(), http.StatusInternalServerError)

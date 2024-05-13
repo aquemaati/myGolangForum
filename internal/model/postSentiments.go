@@ -8,7 +8,7 @@ import (
 var ErrSentimentNotFound = errors.New("sentiment not found")
 
 // AddPostLike adds or updates a like or dislike for a post by a user
-func AddPostLike(db *sql.DB, userID string, postId int, sentiment string) error {
+func AddPostLike(db *sql.DB, userID string, postId string, sentiment string) error {
 	if sentiment != "love" && sentiment != "hate" {
 		return errors.New("invalid sentiment")
 	}
@@ -22,7 +22,7 @@ func AddPostLike(db *sql.DB, userID string, postId int, sentiment string) error 
 	return err
 }
 
-func GetUserSentiment(db *sql.DB, userId string, postId int) (string, error) {
+func GetUserSentiment(db *sql.DB, userId string, postId string) (string, error) {
 	var sentiment string
 	query := `SELECT sentiment FROM PostsLike WHERE userId = ? AND postId = ?`
 	err := db.QueryRow(query, userId, postId).Scan(&sentiment)
@@ -36,7 +36,7 @@ func GetUserSentiment(db *sql.DB, userId string, postId int) (string, error) {
 }
 
 // RemovePostLike removes a sentiment associated with a user and a post
-func RemovePostLike(db *sql.DB, userID string, postId int) error {
+func RemovePostLike(db *sql.DB, userID string, postId string) error {
 	query := `DELETE FROM PostsLike WHERE userId = ? AND postId = ?`
 	_, err := ExecuteNonQuery(db, query, userID, postId)
 	return err

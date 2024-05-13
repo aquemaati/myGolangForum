@@ -8,7 +8,7 @@ import (
 )
 
 type PostInfo struct {
-	PostId        int
+	PostId        string
 	UserId        string
 	UserImage     string
 	UserName      string
@@ -78,7 +78,7 @@ func FetchExtendedPostsWithComments(db *sql.DB, userId *string, category *string
 		return nil, err
 	}
 
-	postMap := make(map[int]*PostInfo)
+	postMap := make(map[string]*PostInfo)
 	for i := range posts {
 		postMap[posts[i].PostId] = &posts[i]
 	}
@@ -92,7 +92,7 @@ func FetchExtendedPostsWithComments(db *sql.DB, userId *string, category *string
 	return posts, nil
 }
 
-func FetchUniquePost(db *sql.DB, postId int) (PostInfo, error) {
+func FetchUniquePost(db *sql.DB, postId string) (PostInfo, error) {
 	var postInfo PostInfo
 	var categoryNames string
 
@@ -169,7 +169,7 @@ func FetchPostsReactedByUser(db *sql.DB, userID string, sentimentFilter *string)
 		return nil, err
 	}
 
-	postMap := make(map[int]*PostInfo)
+	postMap := make(map[string]*PostInfo)
 	for i := range posts {
 		postMap[posts[i].PostId] = &posts[i]
 	}

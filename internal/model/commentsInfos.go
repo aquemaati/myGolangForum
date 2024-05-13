@@ -5,8 +5,8 @@ import (
 )
 
 type CommentInfo struct {
-	PostId    int
-	CommentId int
+	PostId    string
+	CommentId string
 	UserId    string
 	UserImage string
 	UserName  string
@@ -42,7 +42,7 @@ func FetchComments(db *sql.DB) ([]CommentInfo, error) {
 	return ExecuteQuery(db, query, ScanCommentInfo)
 }
 
-func FetchCommentsByPostId(db *sql.DB, postId int) ([]CommentInfo, error) {
+func FetchCommentsByPostId(db *sql.DB, postId string) ([]CommentInfo, error) {
 	query := `
 	    SELECT postId, commentId, userId, userImage, userName, date, loveNumb, hateNumb, content
 	    FROM CommentsInfosView WHERE postId = ?`

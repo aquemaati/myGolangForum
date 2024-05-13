@@ -5,7 +5,6 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/aquemaati/myGolangForum.git/internal/middleware"
 	"github.com/aquemaati/myGolangForum.git/internal/model"
@@ -24,13 +23,8 @@ func SentimentPost(db *sql.DB, tpl *template.Template) http.Handler {
 		//sentiment
 		sentiment := formData["sentiment"][0]
 
-		postIdInt, err := strconv.Atoi(postId)
-		if err != nil {
-			panic(err)
-		}
-
 		// Vérifier l'existence du sentiment actuel
-		existingSentiment, err := model.GetUserSentiment(db, userID, postIdInt)
+		existingSentiment, err := model.GetUserSentiment(db, userID, postId)
 		if err != nil && err != model.ErrSentimentNotFound {
 			http.Error(w, "Failed to get user sentiment: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -38,14 +32,14 @@ func SentimentPost(db *sql.DB, tpl *template.Template) http.Handler {
 
 		// Si le sentiment actuel est le même que celui demandé, supprimer
 		if existingSentiment == sentiment {
-			err := model.RemovePostLike(db, userID, postIdInt)
+			err := model.RemovePostLike(db, userID, postId)
 			if err != nil {
 				http.Error(w, "Could not remove sentiment: "+err.Error(), http.StatusInternalServerError)
 				return
 			}
 		} else {
 			// Ajouter ou mettre à jour le sentiment
-			err = model.AddPostLike(db, userID, postIdInt, sentiment)
+			err = model.AddPostLike(db, userID, postId, sentiment)
 			if err != nil {
 				http.Error(w, "Could not add/update sentiment: "+err.Error(), http.StatusInternalServerError)
 				return

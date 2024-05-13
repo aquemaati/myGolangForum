@@ -6,7 +6,6 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/aquemaati/myGolangForum.git/internal/middleware"
 	"github.com/aquemaati/myGolangForum.git/internal/model"
@@ -19,11 +18,10 @@ func UniquePost(db *sql.DB, tpl *template.Template) http.Handler {
 
 		postId := formData["postId"][0]
 		fmt.Println(postId)
-		postIdInt, _ := strconv.Atoi(postId)
 
 		index := Index{}
 
-		posts, err := model.FetchUniquePost(db, postIdInt)
+		posts, err := model.FetchUniquePost(db, postId)
 		if err != nil {
 			http.Error(w, "could not get posts infos "+err.Error(), http.StatusInternalServerError)
 			log.Panicln(err)

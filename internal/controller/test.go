@@ -11,7 +11,7 @@ import (
 func Test(db *sql.DB, tpl *template.Template) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		cat, err := model.FetchUniquePost(db, 2)
+		cat, err := model.FetchUniquePost(db, "")
 		if err != nil {
 			http.Error(w, "could not get cat infos "+err.Error(), http.StatusInternalServerError)
 		}
