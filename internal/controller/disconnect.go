@@ -2,29 +2,39 @@ package controller
 
 import (
 	"database/sql"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+	"time"
 
-	"github.com/aquemaati/myGolangForum.git/internal/middleware"
 	"github.com/aquemaati/myGolangForum.git/internal/model"
 )
 
 func Disconnect(db *sql.DB, tpl *template.Template) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("session_token")
+		if err != nil {
+			log.Println("token not provided")
+		}
+		// Prepare the SQL statement to avoid SQL injection
+		stmt, err := db.Prepare("UPDATE Sessions SET ExpiresAt = ? WHERE JWT = ?")
+		if err != nil {
+			log.Fatalf("Error preparing update statement: %v", err)
+			return
+		}
+		defer stmt.Close()
 
-		sessionID, ok := r.Context().Value(middleware.SessionIdContextKey).(string)
-		if !ok {
-			// Handle the case where the userID is missing or of an incorrect type
-			log.Println("Session ID not found in context", http.StatusUnauthorized)
+		// Execute the statement with specific parameters
+		_, err = stmt.Exec(time.Now(), cookie.Value)
+		if err != nil {
+			log.Printf("Error updating session expiration: %v", err)
 		}
 
-		fmt.Println("session id is (in disconect)", sessionID)
-		model.InvalidateSessionCookie(w)
-		model.DeleteSession(db, sessionID)
+		// just sent cookie
+		model.SetCookie(w, "session_token", "out", time.Now(), true, "/")
 
-		// ne pas oublier de clear le cache
+		// invalidate sessions in database en updatant expires at
+
 		tpl.ExecuteTemplate(w, "index.html", nil)
 	}
 }

@@ -64,6 +64,7 @@ func Authentication(db *sql.DB, cache *SessionCache, protectedPaths []string) fu
 			// Verify if the session is still active
 			var sessionCount int
 			err = db.QueryRow("SELECT COUNT(*) FROM Sessions WHERE JWT = ? AND UserID = ? AND ExpiresAt > CURRENT_TIMESTAMP", token, userID).Scan(&sessionCount)
+			fmt.Println("----session count -----", sessionCount, "-----")
 			if err != nil || sessionCount == 0 {
 				if requiresAuth {
 					http.Error(w, "Unauthorized: Session is not active or does not exist", http.StatusUnauthorized)
