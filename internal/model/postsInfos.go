@@ -142,3 +142,43 @@ func FetchUniquePost(db *sql.DB, postId int) (PostInfo, error) {
 
 	return postInfo, nil
 }
+
+// FetchPostsReactedByUser retrieves posts reacted to by a user based on the sentiment filter.
+func FetchPostsReactedByUser(db *sql.DB, userID string, sentimentFilter *string) ([]PostInfo, error) {
+	query := `
+        SELECT p.postId, p.userId, p.userImage, p.userName, p.postDate, p.loveNumb, p.hateNumb, p.title, p.description, categoryNames
+        FROM ExtendedPostsInfosView p
+        JOIN PostsLike pl ON p.postId = pl.postId
+        WHERE pl.userId = ?`
+	args := []interface{}{userID}
+
+	if sentimentFilter != nil {
+		query += " AND pl.sentiment = ?"
+		args = append(args, *sentimentFilter)
+	}
+
+	query += " GROUP BY p.postId, p.userId, p.userImage, p.userName, p.postDate, p.title, p.description"
+
+	posts, err := ExecuteQuery[PostInfo](db, query, ScanPostInfo, args...)
+	if err != nil {
+		return []PostInfo{}, err
+	}
+
+	comments, err := FetchComments(db)
+	if err != nil {
+		return nil, err
+	}
+
+	postMap := make(map[int]*PostInfo)
+	for i := range posts {
+		postMap[posts[i].PostId] = &posts[i]
+	}
+
+	for _, comment := range comments {
+		if post, exists := postMap[comment.PostId]; exists {
+			post.Comments = append(post.Comments, comment)
+		}
+	}
+
+	return posts, nil
+}

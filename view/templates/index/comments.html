@@ -1,10 +1,29 @@
 {{define "comments"}}
 {{range .}}
-<p>@@@@@@@@@@@@@@@@@@@COMMENT@@@@@@@@@@@@@@@@@@@@@@@</p>
-<h3>{{.UserName}}</h3>
-<p>{{.Date}}</p>
-<p>LOVE {{.LoveNumb}}</p>
-<p>HATE {{.HateNumb}}</p>
-<p>{{.Content}}</p>
+<div class="comment">
+    <p>@@@@@@@@@@@@@@@@@@@COMMENT@@@@@@@@@@@@@@@@@@@@@@@</p>
+    <h3>{{.UserName}}</h3>
+    <p>{{.Date}}</p>
+    <div class="sentiment-controls">
+        <!-- Love form -->
+        <form action="/comment-sentiment" method="POST" style="display: inline;">
+            <input type="hidden" name="commentId" value="{{.CommentId}}">
+            <input type="hidden" name="sentiment" value="love">
+            <button type="submit">
+                Love {{.LoveNumb}}
+            </button>
+        </form>
+
+        <!-- Hate form -->
+        <form action="/comment-sentiment" method="POST" style="display: inline;">
+            <input type="hidden" name="commentId" value="{{.CommentId}}">
+            <input type="hidden" name="sentiment" value="hate">
+            <button type="submit">
+                Hate {{.HateNumb}}
+            </button>
+        </form>
+    </div>
+    <p>{{.Content}}</p>
+</div>
 {{end}}
 {{end}}

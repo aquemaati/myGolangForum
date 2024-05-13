@@ -4,12 +4,17 @@
      <div class="filter-categories">
          <input type="submit" class="categories-button" name="category" value="{{.Name}}">
      </div>
-     {{end}}
+</form>
+{{end}}
 
-     <div class="filter-user">
-        <input type="submit" name="created" value="my posts">
-        <input type="submit" name="liked" value="my loves">
-        <input type="submit" name="hated" value="my hates">
+<form action="/filtered-home" method="GET">
+    <button type="submit" name="filter" value="posts">My Posts</button>
+</form>
+
+<form action="/filtered-sentiments" method="GET">
+    <div class="filter-user">
+        <button type="submit" name="filter" value="love">My Loves</button>
+        <button type="submit" name="filter" value="hate">My Hates</button>
     </div>
- </form>
- {{end}}
+</form>
+{{end}}

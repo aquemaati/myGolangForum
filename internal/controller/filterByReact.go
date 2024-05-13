@@ -2,6 +2,7 @@ package controller
 
 import (
 	"database/sql"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -10,21 +11,26 @@ import (
 	"github.com/aquemaati/myGolangForum.git/internal/model"
 )
 
-func FilteredHome(db *sql.DB, tpl *template.Template) http.Handler {
+func FilterByReact(db *sql.DB, tpl *template.Template) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("jeloooooooo")
 		formData := r.Context().Value(middleware.FormDataKey).(map[string][]string)
-		category := formData["category"][0]
+		userID, _ := r.Context().Value(middleware.UserIdContextKey).(string)
+		fmt.Println(formData)
+		react := formData["filter"][0]
 
 		index := Index{}
 
-		posts, err := model.FetchExtendedPostsWithComments(db, nil, &category)
+		fmt.Println("Hello")
+		posts, err := model.FetchPostsReactedByUser(db, userID, &react)
 		if err != nil {
 			http.Error(w, "could not get posts infos "+err.Error(), http.StatusInternalServerError)
 			log.Panicln(err)
 			return
 		}
-		index.Posts = posts
 
+		fmt.Println(posts)
+		index.Posts = posts
 		cats, err := model.FetchCat(db)
 		if err != nil {
 			http.Error(w, "could not get cat infos "+err.Error(), http.StatusInternalServerError)

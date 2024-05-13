@@ -54,7 +54,7 @@ func InitializeServer(envFilePath, dbPath string) (*http.Server, error) {
 	sessionCache := initSessionCache()
 	InitTemplates()
 
-	protectedPaths := []string{"/admin", "/user"}
+	protectedPaths := []string{"/admin", "/user", "/post-sentiment", "/sentiment-comment"}
 
 	// Créez un multiplexer
 	mux := http.NewServeMux()
@@ -69,6 +69,9 @@ func InitializeServer(envFilePath, dbPath string) (*http.Server, error) {
 	mux.Handle("/signin", controller.SignIn(tpl))
 	mux.Handle("/submit-signin", controller.SignInSubmit(db, tpl))
 	mux.Handle("/disconnect", controller.Disconnect(db, tpl))
+	mux.Handle("/post-sentiment", controller.SentimentPost(db, tpl))
+	mux.Handle("/comment-sentiment", controller.SentimentComment(db, tpl))
+	mux.Handle("/filtered-sentiments", controller.FilterByReact(db, tpl))
 
 	// Chaîne de middlewares
 	handler := middleware.Recovery(

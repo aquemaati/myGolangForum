@@ -28,7 +28,7 @@ func Authentication(db *sql.DB, cache *SessionCache, protectedPaths []string) fu
 			cookie, err := r.Cookie("session_token") // Assuming 'session_token' is the name of the cookie containing the JWT
 			if err != nil && requiresAuth {
 				// No token provided and path requires authentication
-				http.Error(w, "Unauthorized: No token provided", http.StatusUnauthorized)
+				http.Redirect(w, r, "/signin", http.StatusFound)
 				return
 			} else if err != nil {
 				// No token provided but path does not require authentication
@@ -78,6 +78,7 @@ func Authentication(db *sql.DB, cache *SessionCache, protectedPaths []string) fu
 			fmt.Println("here is the context")
 			// Pass user ID to the context of the next request
 			ctx := context.WithValue(r.Context(), UserIdContextKey, userID)
+			fmt.Println("hello from authen")
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

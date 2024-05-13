@@ -105,3 +105,9 @@ func ExecuteSingleQuery[T any](db *sql.DB, query string, scanFunc func(*sql.Row)
 
 	return result, nil
 }
+
+func ScanString(row *sql.Row) (string, error) {
+	var value string
+	err := row.Scan(&value)
+	return value, err
+}
