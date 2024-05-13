@@ -74,11 +74,8 @@ func Authentication(db *sql.DB, cache *SessionCache, protectedPaths []string) fu
 				}
 				return
 			}
-
-			fmt.Println("here is the context")
 			// Pass user ID to the context of the next request
 			ctx := context.WithValue(r.Context(), UserIdContextKey, userID)
-			fmt.Println("hello from authen")
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

@@ -2,6 +2,7 @@ package controller
 
 import (
 	"database/sql"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -15,27 +16,16 @@ type Index struct {
 	Posts     []model.PostInfo
 	UserID    string
 	UserInfos model.UserPublic
+	Auth      bool
 }
 
 // HomeHandler handles the root path
 func Home(db *sql.DB, tpl *template.Template) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		index := Index{}
 
-		// Attempt to retrieve userID from context; proceed without it if not found
-		userID, ok := r.Context().Value(middleware.UserIdContextKey).(string)
-		if ok {
-			// User ID found, fetch user-specific data
-			index.UserID = userID
-			user, err := model.GetUserPublicById(db, userID)
-			if err != nil {
-				http.Error(w, "Could not get user infos: "+err.Error(), http.StatusInternalServerError)
-				log.Println(err)
-				return
-			}
-			index.UserInfos = user
-		} else {
-			log.Println("User ID not found in context or is of incorrect type; proceeding as public visitor")
+		index, err := UserAuthParser(r, db, w)
+		if err != nil {
+			log.Println(err)
 		}
 
 		// Fetch all posts info from the database, which is visible to both authenticated users and public visitors
@@ -64,4 +54,25 @@ func Home(db *sql.DB, tpl *template.Template) http.Handler {
 			return
 		}
 	})
+}
+
+func UserAuthParser(r *http.Request, db *sql.DB, w http.ResponseWriter) (Index, error) {
+	index := Index{}
+	userID, ok := r.Context().Value(middleware.UserIdContextKey).(string)
+	if ok {
+
+		index.UserID = userID
+		index.Auth = true
+		user, err := model.GetUserPublicById(db, userID)
+		if err != nil {
+			http.Error(w, "Could not get user infos: "+err.Error(), http.StatusInternalServerError)
+			log.Println(err)
+		}
+		index.UserInfos = user
+	} else {
+		log.Println("User ID not found in context or is of incorrect type; proceeding as public visitor")
+		index.Auth = false
+		fmt.Println("i m here")
+	}
+	return index, nil
 }

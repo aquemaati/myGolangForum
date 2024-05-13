@@ -2,8 +2,13 @@
 <nav>
      <h4>Rumy</h4>
      <h4>New post</h4>
-     <h4>SignIn/SignOut</h4>
+     {{if .Auth}}
+           <h4>Deconnecion</h4>
+        {{else}}
+            <h4>SignIn</h4>
+        {{end}}
      <h4>Profil</h4>
      <h4>notification</h4>
-</nav>
+     <h1>Welcome {{.UserInfos}}</h1>
+     </nav>
 {{end}}

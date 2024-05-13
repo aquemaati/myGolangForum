@@ -1,0 +1,17 @@
+{{template "header"}}
+{{template "nav" .}}
+<form method="POST" action="/create-post-submit"> 
+<textarea name="titlePost" id="" cols="30" rows="1"></textarea>
+<textarea name="descriptionPost" id="" cols="30" rows="3"></textarea>
+<textarea name="contentPost" id="" cols="30" rows="10"></textarea>
+
+<button type="submit"> ====> </button>
+
+{{range .Cat}}
+     <div class="filter-categories">
+         <input type="checkbox" name="category" value="{{.Name}}">
+         <label for="category">{{.Name}}</label>
+     </div>
+{{end}}
+</form>
+{{template "footer"}}

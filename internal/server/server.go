@@ -72,6 +72,8 @@ func InitializeServer(envFilePath, dbPath string) (*http.Server, error) {
 	mux.Handle("/post-sentiment", controller.SentimentPost(db, tpl))
 	mux.Handle("/comment-sentiment", controller.SentimentComment(db, tpl))
 	mux.Handle("/filtered-sentiments", controller.FilterByReact(db, tpl))
+	mux.Handle("/create-post", controller.NewPost(db, tpl))
+	mux.Handle("/create-post-submit", controller.SubmitPoast(db, tpl))
 
 	// Chaîne de middlewares
 	handler := middleware.Recovery(
