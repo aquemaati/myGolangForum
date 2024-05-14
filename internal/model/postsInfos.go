@@ -45,8 +45,8 @@ func ScanPostInfo(rows *sql.Rows) (PostInfo, error) {
 	}
 	return p, nil
 }
-
 func FetchPosts(db *sql.DB, userId *string, category *string) ([]PostInfo, error) {
+	fmt.Println("fetch parameters", userId, category)
 	query := `
 	    SELECT postId, userId, userImage, userName, postDate, loveNumb, hateNumb, title, description, categoryNames
 	    FROM ExtendedPostsInfosView
@@ -62,8 +62,10 @@ func FetchPosts(db *sql.DB, userId *string, category *string) ([]PostInfo, error
 		catPattern := fmt.Sprintf("%%%s%%", *category)
 		query += " AND categoryNames LIKE ?"
 		args = append(args, catPattern)
+		fmt.Printf("Filtering posts by category: %s\n", catPattern) // Debugging output
 	}
 
+	fmt.Println("Executing SQL query:", query) // Log the final query
 	return ExecuteQuery(db, query, ScanPostInfo, args...)
 }
 

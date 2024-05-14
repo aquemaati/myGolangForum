@@ -2,6 +2,7 @@ package controller
 
 import (
 	"database/sql"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -33,11 +34,10 @@ func SubmitPostHandler(db *sql.DB, tpl *template.Template) http.HandlerFunc {
 		titlePost := formData["titlePost"][0]
 		descriptionPost := formData["descriptionPost"][0]
 		categories := formData["category"] // Assuming checkboxes are used and name is 'category'
-
 		// Insert the post and associate categories
 		if err := SubmitPost(db, postId.String(), index.UserID, titlePost, descriptionPost, categories); err != nil {
 			log.Println("Error submitting post:", err)
-			http.Error(w, "Error submitting post", http.StatusInternalServerError)
+			http.Redirect(w, r, "/create-post", http.StatusFound)
 			return
 		}
 
@@ -47,6 +47,9 @@ func SubmitPostHandler(db *sql.DB, tpl *template.Template) http.HandlerFunc {
 }
 
 func SubmitPost(db *sql.DB, postId, userId, title, description string, categoryNames []string) error {
+	if title == "" || description == "" || categoryNames == nil {
+		return fmt.Errorf("categorys, title and description cannot be empty")
+	}
 	tx, err := db.Begin()
 	if err != nil {
 		return err

@@ -8,7 +8,7 @@
 {{end}}
 
 <form action="/filtered-home" method="GET">
-    <button type="submit" name="filter" value="posts">My Posts</button>
+    <button type="submit" name="userId" value="{{.UserID}}">My Posts</button>
 </form>
 
 <form action="/filtered-sentiments" method="GET">
