@@ -76,19 +76,20 @@ func InitializeServer(envFilePath, dbPath string) (*http.Server, error) {
 	mux.Handle("/create-post-submit", controller.SubmitPostHandler(db, tpl))
 	mux.Handle("/comment-submit", controller.AddComment(db, tpl))
 
-	// Chaîne de middlewares
-	handler := middleware.Recovery(
-		middleware.SecurityHeaders(
-			middleware.Logging(
-				middleware.ParseForm( // Ajoutez le parsing du formulaire avant les autres middlewares
-					middleware.CacheHandler(sessionCache)(
-						middleware.Authentication(db, sessionCache, protectedPaths)(mux),
+	// Updated middleware chain with NotFoundMiddleware
+	handler :=
+		middleware.Recovery(
+			middleware.SecurityHeaders(
+				middleware.Logging(
+					middleware.ParseForm(
+						middleware.CacheHandler(sessionCache)(
+							middleware.Authentication(db, sessionCache, protectedPaths)(mux),
+						),
 					),
 				),
 			),
-		),
-	)
-
+		)
+		
 	// Configurez le serveur avec les paramètres TLS
 	tlsConfig := &tls.Config{
 		MinVersion: tls.VersionTLS12,
