@@ -29,9 +29,6 @@ func AddComment(db *sql.DB, tpl *template.Template) http.HandlerFunc {
 		postId := getFirstValue(formData, "postId")
 		content := getFirstValue(formData, "content")
 
-		fmt.Println("add comments paramewters")
-		fmt.Println("user", index.UserID, "commId", commId, "postId", postId, "content", content)
-
 		//redirect to index/
 		err = SubmitComment(db, commId, postId, index.UserID, content)
 		if err != nil {

@@ -65,7 +65,6 @@ func FetchPosts(db *sql.DB, userId *string, category *string) ([]PostInfo, error
 		fmt.Printf("Filtering posts by category: %s\n", catPattern) // Debugging output
 	}
 
-	fmt.Println("Executing SQL query:", query) // Log the final query
 	return ExecuteQuery(db, query, ScanPostInfo, args...)
 }
 

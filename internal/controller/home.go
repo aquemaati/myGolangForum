@@ -2,7 +2,6 @@ package controller
 
 import (
 	"database/sql"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -73,7 +72,6 @@ func UserAuthParser(r *http.Request, db *sql.DB, w http.ResponseWriter) (Index, 
 	} else {
 		log.Println("User ID not found in context or is of incorrect type; proceeding as public visitor")
 		index.Auth = false
-		fmt.Println("i m here")
 	}
 	return index, nil
 }

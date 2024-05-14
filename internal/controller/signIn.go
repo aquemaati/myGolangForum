@@ -2,7 +2,6 @@ package controller
 
 import (
 	"database/sql"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -27,8 +26,6 @@ func SignInSubmit(db *sql.DB, tpl *template.Template) http.HandlerFunc {
 
 		email := formData["email"][0]
 		password := formData["password"][0]
-		fmt.Println("look here")
-		fmt.Println(email, password)
 
 		//check match in db TODO: creqte propper error messqges
 		user, err := model.CheckUserSignIn(db, email, password)

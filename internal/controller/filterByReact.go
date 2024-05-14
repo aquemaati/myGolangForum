@@ -2,7 +2,6 @@ package controller
 
 import (
 	"database/sql"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -13,7 +12,6 @@ import (
 
 func FilterByReact(db *sql.DB, tpl *template.Template) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("jeloooooooo")
 		formData := r.Context().Value(middleware.FormDataKey).(map[string][]string)
 		userID, _ := r.Context().Value(middleware.UserIdContextKey).(string)
 		react := formData["filter"][0]
@@ -23,7 +21,6 @@ func FilterByReact(db *sql.DB, tpl *template.Template) http.Handler {
 			log.Println(err)
 		}
 
-		fmt.Println("Hello")
 		posts, err := model.FetchPostsReactedByUser(db, userID, &react)
 		if err != nil {
 			http.Error(w, "could not get posts infos "+err.Error(), http.StatusInternalServerError)
@@ -31,7 +28,6 @@ func FilterByReact(db *sql.DB, tpl *template.Template) http.Handler {
 			return
 		}
 
-		fmt.Println(posts)
 		index.Posts = posts
 		cats, err := model.FetchCat(db)
 		if err != nil {

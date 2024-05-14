@@ -2,7 +2,6 @@ package controller
 
 import (
 	"database/sql"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -21,7 +20,6 @@ func UniquePost(db *sql.DB, tpl *template.Template) http.Handler {
 		formData := r.Context().Value(middleware.FormDataKey).(map[string][]string)
 
 		postId := formData["postId"][0]
-		fmt.Println(postId)
 
 		posts, err := model.FetchUniquePost(db, postId)
 		if err != nil {
