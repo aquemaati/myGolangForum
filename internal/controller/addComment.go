@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/aquemaati/myGolangForum.git/internal/middleware"
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 )
 
 func AddComment(db *sql.DB, tpl *template.Template) http.HandlerFunc {
@@ -22,12 +22,7 @@ func AddComment(db *sql.DB, tpl *template.Template) http.HandlerFunc {
 		}
 
 		// Generate a new UUID for the postId
-		commId, err := uuid.NewV4()
-		if err != nil {
-			log.Println("Error generating UUID:", err)
-			http.Error(w, "Server error", http.StatusInternalServerError)
-			return
-		}
+		commId := uuid.New().String()
 
 		//recuperer aussi id du post dans le html
 		formData := r.Context().Value(middleware.FormDataKey).(map[string][]string)
@@ -36,11 +31,31 @@ func AddComment(db *sql.DB, tpl *template.Template) http.HandlerFunc {
 
 		fmt.Println("add comments paramewters")
 		fmt.Println("user", index.UserID, "commId", commId, "postId", postId, "content", content)
-		tpl.ExecuteTemplate(w, "index.html", nil)
+
+		//redirect to index/
+		err = SubmitComment(db, commId, postId, index.UserID, content)
+		if err != nil {
+			http.Error(w, "AddComment failed", http.StatusInternalServerError)
+		}
+		http.Redirect(w, r, "/", http.StatusFound)
 	}
 }
 
 func SubmitComment(db *sql.DB, commId, postId, userId, content string) error {
+	if content == "" {
+		return fmt.Errorf("can't post an empty comment")
+	}
+
+	stmt, err := db.Prepare("INSERT INTO Comments(id, postId, userId, content) VALUES(?, ?, ?, ?)")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(commId, postId, userId, content)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
