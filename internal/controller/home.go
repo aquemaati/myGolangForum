@@ -17,6 +17,7 @@ type Index struct {
 	UserID    string
 	UserInfos model.UserPublic
 	Auth      bool
+	Filtered  bool
 }
 
 // HomeHandler handles the root path

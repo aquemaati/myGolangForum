@@ -2,8 +2,8 @@ package controller
 
 import (
 	"database/sql"
-	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 
 	"github.com/aquemaati/myGolangForum.git/internal/middleware"
@@ -17,6 +17,11 @@ func FilteredHome(db *sql.DB, tpl *template.Template) http.Handler {
 		// Get category from form data safely
 		category := getFirstValue(formData, "category")
 		userId := getFirstValue(formData, "userId")
+
+		index, err := UserAuthParser(r, db, w)
+		if err != nil {
+			log.Println(err)
+		}
 
 		var cat *string
 		if category == "" {
@@ -37,17 +42,15 @@ func FilteredHome(db *sql.DB, tpl *template.Template) http.Handler {
 			http.Error(w, "Could not get posts info: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		index := Index{
-			Posts: posts,
-		}
+		index.Posts = posts
 
-		fmt.Println(index.Posts)
 		cats, err := model.FetchCat(db)
 		if err != nil {
 			http.Error(w, "Could not get category info: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 		index.Cat = cats
+		index.Filtered = true
 
 		err = tpl.ExecuteTemplate(w, "index.html", index)
 		if err != nil {

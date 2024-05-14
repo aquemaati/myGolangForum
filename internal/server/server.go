@@ -54,7 +54,7 @@ func InitializeServer(envFilePath, dbPath string) (*http.Server, error) {
 	sessionCache := initSessionCache()
 	InitTemplates()
 
-	protectedPaths := []string{"/admin", "/user", "/post-sentiment", "/sentiment-comment", "/create-post-submit"}
+	protectedPaths := []string{"/admin", "/user", "/post-sentiment", "/comment-sentiment", "/create-post-submit", "/filtered-sentiments", "/comment-submit"}
 
 	// Créez un multiplexer
 	mux := http.NewServeMux()

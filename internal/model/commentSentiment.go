@@ -5,7 +5,7 @@ import (
 	"errors"
 )
 
-func AddSentiimentComment(db *sql.DB, userID string, commentId int, sentiment string) error {
+func AddSentiimentComment(db *sql.DB, userID string, commentId string, sentiment string) error {
 	if sentiment != "love" && sentiment != "hate" {
 		return errors.New("invalid sentiment")
 	}
@@ -20,7 +20,7 @@ func AddSentiimentComment(db *sql.DB, userID string, commentId int, sentiment st
 	return err
 }
 
-func GetUserSentimentComment(db *sql.DB, userId string, postId int) (string, error) {
+func GetUserSentimentComment(db *sql.DB, userId string, postId string) (string, error) {
 	query := `SELECT sentiment FROM CommentsLike WHERE userId = ? AND commentsId = ?`
 
 	var sentiment string
@@ -37,10 +37,8 @@ func GetUserSentimentComment(db *sql.DB, userId string, postId int) (string, err
 	return sentiment, nil
 }
 
-func RemoveSentomentComment(db *sql.DB, userID string, postId int) error {
+func RemoveSentomentComment(db *sql.DB, userID string, postId string) error {
 	query := `DELETE FROM CommentsLike WHERE userId = ? AND commentsId = ?`
 	_, err := ExecuteNonQuery(db, query, userID, postId)
 	return err
 }
-
-

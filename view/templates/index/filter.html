@@ -6,7 +6,8 @@
      </div>
 </form>
 {{end}}
-
+{{if .Auth}}
+         
 <form action="/filtered-home" method="GET">
     <button type="submit" name="userId" value="{{.UserID}}">My Posts</button>
 </form>
@@ -17,4 +18,9 @@
         <button type="submit" name="filter" value="hate">My Hates</button>
     </div>
 </form>
+        {{else}}
+        {{end}}
+        {{if .Filtered}}
+        <a href="/">delete filters</a>
+        {{end}}
 {{end}}

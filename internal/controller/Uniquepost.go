@@ -13,13 +13,15 @@ import (
 
 func UniquePost(db *sql.DB, tpl *template.Template) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		index, err := UserAuthParser(r, db, w)
+		if err != nil {
+			log.Println(err)
+		}
 
 		formData := r.Context().Value(middleware.FormDataKey).(map[string][]string)
 
 		postId := formData["postId"][0]
 		fmt.Println(postId)
-
-		index := Index{}
 
 		posts, err := model.FetchUniquePost(db, postId)
 		if err != nil {

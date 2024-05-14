@@ -16,10 +16,12 @@ func FilterByReact(db *sql.DB, tpl *template.Template) http.Handler {
 		fmt.Println("jeloooooooo")
 		formData := r.Context().Value(middleware.FormDataKey).(map[string][]string)
 		userID, _ := r.Context().Value(middleware.UserIdContextKey).(string)
-		fmt.Println(formData)
 		react := formData["filter"][0]
 
-		index := Index{}
+		index, err := UserAuthParser(r, db, w)
+		if err != nil {
+			log.Println(err)
+		}
 
 		fmt.Println("Hello")
 		posts, err := model.FetchPostsReactedByUser(db, userID, &react)
@@ -36,6 +38,8 @@ func FilterByReact(db *sql.DB, tpl *template.Template) http.Handler {
 			http.Error(w, "could not get cat infos "+err.Error(), http.StatusInternalServerError)
 		}
 		index.Cat = cats
+
+		index.Filtered = true
 
 		err = tpl.ExecuteTemplate(w, "index.html", index)
 		if err != nil {

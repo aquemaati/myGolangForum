@@ -1,14 +1,13 @@
 {{define "nav"}}
 <nav>
-     <h4>Rumy</h4>
-     <h4>New post</h4>
+     <a href="/"><h4>Rumy</h4></a>
      {{if .Auth}}
-           <h4>Deconnecion</h4>
-        {{else}}
-            <h4>SignIn</h4>
-        {{end}}
-     <h4>Profil</h4>
+     <a href="/create-post"><h4>New post</h4></a>
+     <a href="/disconnect"><h4>signOut</h4></a>
+     <h4>{{.UserInfos.UserName}}</h4>
      <h4>notification</h4>
-     <h1>Welcome {{.UserInfos}}</h1>
+     {{else}}
+     <a href="/signin"><h4>signIn</h4></a>
+        {{end}}
      </nav>
 {{end}}
