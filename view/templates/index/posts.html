@@ -34,7 +34,7 @@
 {{range .CategoryNames}}
 <button>{{.}}</button>
 {{end}}
-{{template "addComment"}}
+{{template "addComment" .}}
 {{template "comments".Comments}}
 
 {{end}}

@@ -2,7 +2,6 @@ package controller
 
 import (
 	"database/sql"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -17,7 +16,6 @@ func NewPost(db *sql.DB, tpl *template.Template) http.Handler {
 		if err != nil {
 			log.Println(err)
 		}
-		fmt.Println("ici aussie")
 		cats, err := model.FetchCat(db)
 		if err != nil {
 			http.Error(w, "Could not get category infos: "+err.Error(), http.StatusInternalServerError)

@@ -1,5 +1,12 @@
 {{define "addComment"}}
-<form action="" method="post"></form>
-<textarea name="comment" id="" cols="30" rows="10"></textarea>
-<button type="submit">add comment</button>
+<<form method="POST" action="/comment-submit">
+     <!-- Invisible input to send the post ID -->
+     <input type="hidden" name="postId" value="{{.PostId}}">
+ 
+     <!-- Text area for user input -->
+     <textarea name="content" cols="30" rows="10" placeholder="Type your comment..."></textarea>
+ 
+     <!-- Submit button -->
+     <button type="submit">Submit</button>
+ </form>
 {{end}}
